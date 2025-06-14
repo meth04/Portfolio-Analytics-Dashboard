@@ -1,5 +1,6 @@
 import pandas as pd 
-import numpy as np     
+import numpy as np  
+from typing import List, Optional
 
 def daily_return(prices: pd.DataFrame)->pd.DataFrame:
     return prices.pct_change().dropna(how='all')
@@ -39,10 +40,10 @@ def sortino_ratio(prices: pd.DataFrame, daily_return_results:pd.DataFrame, risk_
 def calmar_ratio(prices:pd.DataFrame, daily_return_results:pd.DataFrame)->pd.DataFrame:
     return annualized_return(prices, daily_return_results) / abs(max_drawdown(prices, daily_return_results))
 
-def treynor_ratio(prices:pd.DataFrame, beta=1.2, risk_free_rate=0.02):
+def treynor_ratio(prices:pd.DataFrame, daily_return_results:pd.DataFrame, beta=1.2, risk_free_rate=0.02):
     return (annualized_return(prices, daily_return_results) - risk_free_rate) / beta
 
-def jensen_alpha(prices:pd.DataFrame, beta=1.2, market_return=0.1, risk_free_rate=0.02)->pd.DataFrame:
+def jensen_alpha(prices:pd.DataFrame, daily_return_results:pd.DataFrame, beta=1.2, market_return=0.1, risk_free_rate=0.02)->pd.DataFrame:
     excepted_portfolio_return = risk_free_rate + beta * (market_return - risk_free_rate)
     jensen_alpha_results = annualized_return(prices, daily_return_results) - excepted_portfolio_return
     return jensen_alpha_results
@@ -66,19 +67,71 @@ def omega_ratio(prices: pd.DataFrame, daily_return_results:pd.DataFrame, risk_fr
     omega = gain/loss
     return omega
 
-def infomation_ratio(prices:pd.DataFrame, daily_return_results:pd.DataFrame, benchmark:pd.Series, freq='daily')->pd.Series:
-    benchmark_returns = benchmark.pct_change().dropna()
-    aligned = daily_return_results.align(benchmark_returns, join='inner', axis=0)
-    daily_return_results, benchmark_returns = aligned[0], aligned[1]
+def infomation_ratio(
+    prices: pd.DataFrame,
+    daily_return_results: pd.DataFrame,
+    benchmark: pd.Series,
+    freq: str = 'daily'
+) -> pd.Series:
+    """
+    Information Ratio: annualized excess return over tracking error.
+    """
+    bench_ret = benchmark.pct_change().dropna()
+    bench_ret = bench_ret.reindex(daily_return_results.index).dropna()
+    dr_aligned = daily_return_results.loc[bench_ret.index]
 
-    excess = daily_return_results.sub(benchmark_returns, axis=0)
-    tracking_error = excess.std()
-    annual_factor = 251 if freq == 'daily' else 12 
-    annualized_excess = excess.mean() * annual_factor
-    annualized_tracking_error = tracking_error * np.sqrt(annual_factor)
+    excess = dr_aligned.sub(bench_ret, axis=0)
 
-    info_ratio = annualized_excess / annualized_tracking_error
-    return info_ratio
+    te = excess.std()
+
+    factor = 251 if freq == 'daily' else 12
+    ann_excess = excess.mean() * factor
+    ann_te = te * np.sqrt(factor)
+
+    return ann_excess / ann_te
+
+def scenario_analysis(prices: pd.DataFrame,
+                      weights: Optional[pd.Series] = None,
+                      shocks: List[float] = [-0.1, -0.05, 0.0, 0.05, 0.1]) -> pd.Series:
+    last = prices.iloc[-1]
+    if weights is None:
+        weights = pd.Series(1/len(last), index=last.index)
+    else:
+        weights = weights.reindex(last.index).fillna(0)
+    base = (last * weights).sum()
+    impacts = {}
+    for s in shocks:
+        new_val = (last * (1+s) * weights).sum()
+        impacts[s] = (new_val/base) - 1
+    return pd.Series(impacts)
+
+def rolling_correlation(returns: pd.DataFrame, window: int = 60) -> pd.DataFrame:
+    corr_records = []
+    dates = returns.index[window-1:]
+    for i, date in enumerate(dates):
+        corr_mat = returns.iloc[i:i+window].corr().stack()
+        corr_mat.index = pd.MultiIndex.from_product([[date], corr_mat.index.levels[0], corr_mat.index.levels[1]])
+        corr_records.append(corr_mat)
+    df = pd.concat(corr_records).rename("corr").to_frame()
+    return df
+
+def risk_contribution(prices: pd.DataFrame,
+                      weights: pd.Series,
+                      freq: str = 'daily') -> pd.Series:
+    """
+    Tính tỉ lệ đóng góp rủi ro cho mỗi tài sản trong danh mục.
+    """
+    returns = prices.pct_change().dropna()
+    cov = returns.cov() * (251 if freq=='daily' else 12)
+    w = weights.reindex(cov.index).fillna(0).values
+    port_vol = np.sqrt(w @ cov.values @ w)
+    mc = cov.values @ w
+    # marginal contribution * weight = contribution
+    contrib = w * mc / port_vol
+    # % of total vol
+    pct = contrib / port_vol
+    return pd.Series(pct, index=cov.index).sort_values(ascending=False)
+
 
 if __name__ == "__main__":
     data = pd.read_csv('../data/processed/sp500_price.csv', index_col='Date')

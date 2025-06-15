@@ -30,14 +30,13 @@ This Streamlit application provides an interactive dashboard for portfolio analy
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/portfolio-analytics-dashboard.git
+   git clone https://github.com/meth04/Portfolio-Analytics-Dashboard.git
    cd portfolio-analytics-dashboard
    ```
 2. Create and activate a virtual environment (optional but recommended):
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/macOS
-   venv\Scripts\activate   # Windows
+   conda create env --name sci-env python=3.10
+   conda activate sci-env
    ```
 3. Install dependencies:
    ```bash

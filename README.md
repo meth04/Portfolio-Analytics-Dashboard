@@ -68,7 +68,7 @@ Below are sample screenshots showcasing key visualizations in the dashboard:
 - ![Price and Cumulative Returns](assets/price_and_cumulative.png)
 - ![Drawdown Duration](assets/drawdown_duration.png)
 - ![Monte Carlo Simulation](assets/monte_carlo.png)
-- ![Portfolio Drawdown](assets/portfolio_drawdown.png)
+- ![Portfolio Drawdown](assets/portfolio_downdraw.png)
 - ![Risk Contribution per Asset](assets/risk_contribution.png)
 - ![Rolling Sharpe Ratio](assets/rolling_shapre_ratio.png)
 - ![Strategy vs. Benchmark](assets/strategy_vs_benchmark.png)

@@ -1,5 +1,7 @@
 # Portfolio Analytics Dashboard
 
+A lightweight and interactive Streamlit app to analyze, backtest, and optimize investment portfolios using advanced financial metrics and visualizations.
+
 This Streamlit application provides an interactive dashboard for portfolio analytics, risk analysis, visualization, backtesting, and optimization. It integrates various financial metrics and methodologies to help investors and analysts explore and optimize their portfolios.
 
 ## Features
@@ -30,13 +32,14 @@ This Streamlit application provides an interactive dashboard for portfolio analy
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/meth04/Portfolio-Analytics-Dashboard.git
+   git clone https://github.com/yourusername/portfolio-analytics-dashboard.git
    cd portfolio-analytics-dashboard
    ```
 2. Create and activate a virtual environment (optional but recommended):
    ```bash
-   conda create env --name sci-env python=3.10
-   conda activate sci-env
+   python -m venv venv
+   source venv/bin/activate  # Linux/macOS
+   venv\Scripts\activate   # Windows
    ```
 3. Install dependencies:
    ```bash
@@ -57,6 +60,21 @@ This Streamlit application provides an interactive dashboard for portfolio analy
    - Configure VaR/CVaR and backtest settings
 4. Navigate through tabs to view metrics, risk analysis, visualizations, optimization, and simulations.
 
+## Screenshots
+
+Below are sample screenshots showcasing key visualizations in the dashboard:
+
+- ![Portfolio Metrics](assets/portfolio_metric.png)
+- ![Price and Cumulative Returns](assets/price_and_cumulative.png)
+- ![Drawdown Duration](assets/drawdown_duration.png)
+- ![Monte Carlo Simulation](assets/monte_carlo.png)
+- ![Portfolio Drawdown](assets/portfolio_drawdown.png)
+- ![Risk Contribution per Asset](assets/risk_contribution.png)
+- ![Rolling Sharpe Ratio](assets/rolling_shapre_ratio.png)
+- ![Strategy vs. Benchmark](assets/strategy_vs_benchmark.png)
+- ![Suggested Optimal Allocation](assets/suggest_optimal_allocation.png)
+- ![Top 10 Leading Stocks](assets/top10.png)
+  
 ## Project Structure
 
 ```
@@ -75,7 +93,7 @@ This Streamlit application provides an interactive dashboard for portfolio analy
 
 ## Dependencies
 
-- Python 3.8+
+- Python 3.10+
 - streamlit
 - pandas
 - numpy
@@ -89,5 +107,5 @@ Contributions are welcome! Please open issues or submit pull requests for enhanc
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache-2.0 License. See the [LICENSE](LICENSE) file for details.
 

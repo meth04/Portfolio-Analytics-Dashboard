@@ -1,71 +1,57 @@
 import pandas as pd
 import numpy as np
-from sklearn.decomposition import PCA
-import plotly.express as px
-import seaborn as sns
-from arch import arch_model
-import matplotlib.pyplot as plt
+from typing import Optional, Dict
+from scipy.stats import norm, t
 
-
-def rolling_vol(daily_returns: pd.DataFrame, window: int = 30) -> pd.DataFrame:
-    return daily_returns.rolling(window).std() * np.sqrt(252)
-
-
-def compute_correlation(daily_returns: pd.DataFrame) -> pd.DataFrame:
-    return daily_returns.corr()
-
-
-def compute_pca(daily_returns: pd.DataFrame, n_components: int = 3):
-    pca = PCA(n_components=n_components)
-    components = pca.fit_transform(daily_returns.fillna(0))
-    explained_variance = pca.explained_variance_ratio_
-    return components, explained_variance
-
-
-def value_at_risk(daily_returns: pd.DataFrame, alpha: float = 0.05):
+def historical_var(daily_returns: pd.Series, alpha: float = 0.05) -> float:
     return daily_returns.quantile(alpha)
 
+def historical_cvar(daily_returns: pd.Series, alpha: float = 0.05) -> float:
+    var = historical_var(daily_returns, alpha)
+    return daily_returns[daily_returns <= var].mean()
 
-def conditional_var(daily_returns: pd.DataFrame, alpha: float = 0.05):
-    var = value_at_risk(daily_returns, alpha)
-    cvar = daily_returns[daily_returns.le(var)].mean()
+def parametric_var_normal(daily_returns: pd.Series, alpha: float = 0.05) -> float:
+    mu = daily_returns.mean()
+    sigma = daily_returns.std()
+    z = norm.ppf(alpha)
+    return mu + sigma * z
+
+def parametric_cvar_normal(daily_returns: pd.Series, alpha: float = 0.05) -> float:
+    mu = daily_returns.mean()
+    sigma = daily_returns.std()
+    z = norm.ppf(alpha)
+    # CVaR for normal: mu - sigma * pdf(z)/alpha
+    pdf_z = norm.pdf(z)
+    cvar = mu - sigma * pdf_z / alpha
     return cvar
 
+def parametric_var_t(daily_returns: pd.Series, alpha: float = 0.05, df: int = 5) -> float:
+    mu = daily_returns.mean()
+    sigma = daily_returns.std()
+    # t percent point
+    t_ppf = t.ppf(alpha, df)
+    # adjust scaling: for Student t, return distribution assumed standardized
+    return mu + sigma * t_ppf
 
-def estimate_garch_volatility(daily_returns: pd.DataFrame, symbol: str = 'AAPL', p: int = 1, q: int = 1, horizon: int = 5) -> pd.Series:
-    returns = daily_returns[symbol] * 100  # chuyển về %
-    returns = returns.dropna()
-    
-    model = arch_model(returns, vol='Garch', p=p, q=q, rescale=False)
-    res = model.fit(disp="off")
+def parametric_cvar_t(daily_returns: pd.Series, alpha: float = 0.05, df: int = 5) -> float:
+    mu = daily_returns.mean()
+    sigma = daily_returns.std()
+    t_ppf = t.ppf(alpha, df)
+    # CVaR for t-dist: use formula: mu + sigma * (pdf_t(ppf)/(alpha*(df/(df-1))))
+    pdf_t = t.pdf(t_ppf, df)
+    # Faktor adjustment: see literature; approximate:
+    cvar = mu - sigma * (df + t_ppf**2) / (df - 1) * pdf_t / alpha
+    return cvar
 
-    forecast = res.forecast(horizon=horizon)
-    cond_vol = forecast.variance.iloc[-1] ** 0.5
-    return cond_vol
+def monte_carlo_var(daily_returns: pd.Series, alpha: float = 0.05, num_simulations: int = 10000) -> float:
+    mu = daily_returns.mean()
+    sigma = daily_returns.std()
+    sims = np.random.normal(mu, sigma, size=num_simulations)
+    return np.quantile(sims, alpha)
 
-
-if __name__ == "__main__":
-    # Ví dụ sử dụng
-    df = pd.read_csv("../data/processed/sp500_price.csv", index_col="Date", parse_dates=True)
-    daily_returns = df.pct_change().dropna()
-
-    print("\n Rolling Volatility (30-day):")
-    print(rolling_vol(daily_returns).tail())
-
-    print("\n Correlation Matrix:")
-    corr = compute_correlation(daily_returns)
-    print(corr)
-    # plot_correlation_heatmap(corr)
-
-    print("\n PCA Variance Explained:")
-    _, ev = compute_pca(daily_returns)
-    print(ev)
-    # plot_pca_variance(ev)
-
-    print("\n Value at Risk:")
-    print(value_at_risk(daily_returns))
-
-    print("\n Conditional VaR:")
-    print(conditional_var(daily_returns))
-
-    print("\n Estimate Garch Volatility: ", estimate_garch_volatility(daily_returns, symbol='AAPL'))
+def monte_carlo_cvar(daily_returns: pd.Series, alpha: float = 0.05, num_simulations: int = 10000) -> float:
+    mu = daily_returns.mean()
+    sigma = daily_returns.std()
+    sims = np.random.normal(mu, sigma, size=num_simulations)
+    var = np.quantile(sims, alpha)
+    return sims[sims <= var].mean()

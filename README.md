@@ -70,7 +70,7 @@ Below are sample screenshots showcasing key visualizations in the dashboard:
 - ![Monte Carlo Simulation](assets/monte_carlo.png)
 - ![Portfolio Drawdown](assets/portfolio_downdraw.png)
 - ![Risk Contribution per Asset](assets/risk_contribution.png)
-- ![Rolling Sharpe Ratio](assets/rolling_shapre_ratio.png)
+- ![Rolling Sharpe Ratio](assets/rolling_shape_ratio.png)
 - ![Strategy vs. Benchmark](assets/strategy_vs_benchmark.png)
 - ![Suggested Optimal Allocation](assets/suggest_optimal_allocation.png)
 - ![Top 10 Leading Stocks](assets/top10.png)
